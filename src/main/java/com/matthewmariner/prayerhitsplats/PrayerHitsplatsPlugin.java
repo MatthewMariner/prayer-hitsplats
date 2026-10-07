@@ -74,10 +74,7 @@ public class PrayerHitsplatsPlugin extends Plugin
 	{
 		ticks++;
 		previous = current;
-		// The server's values: the client flips a prayer's varbit on click, before the server agrees.
-		current = (up(VarbitID.PRAYER_PROTECTFROMMELEE) ? MELEE : 0)
-			| (up(VarbitID.PRAYER_PROTECTFROMMISSILES) ? MISSILES : 0)
-			| (up(VarbitID.PRAYER_PROTECTFROMMAGIC) ? MAGIC : 0);
+		current = protection();
 	}
 
 	@Subscribe
@@ -112,8 +109,9 @@ public class PrayerHitsplatsPlugin extends Plugin
 		boolean melee = fired == Landings.NONE && hitsplat.isMine() && attackerInMeleeReach(player);
 		int prayers = fired == Landings.NONE ? current : fired;
 		overlay.tint(slot, hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayedAgainst(melee, prayers) ? end : 0);
-		log.debug("hitsplat type={} amount={} tick={} projectile={} melee={} prayers={} slot={}",
-			hitsplat.getHitsplatType(), hitsplat.getAmount(), ticks, fired != Landings.NONE, melee, prayers, slot);
+		log.debug("hitsplat type={} amount={} tick={} projectile={} melee={} judged={} previous={} current={} live={} slot={}",
+			hitsplat.getHitsplatType(), hitsplat.getAmount(), ticks, fired != Landings.NONE, melee, prayers,
+			previous, current, protection(), slot);
 	}
 
 	/**
@@ -132,6 +130,14 @@ public class PrayerHitsplatsPlugin extends Plugin
 		WorldView view = client.getTopLevelWorldView();
 		return Stream.<Actor>concat(view.npcs().stream(), view.players().stream())
 			.anyMatch(actor -> actor.getInteracting() == player && actor.getWorldArea().isInMeleeDistance(area));
+	}
+
+	/** The protection prayers the server has up. Never the client's values: it flips a prayer's varbit on click, before the server agrees. */
+	private int protection()
+	{
+		return (up(VarbitID.PRAYER_PROTECTFROMMELEE) ? MELEE : 0)
+			| (up(VarbitID.PRAYER_PROTECTFROMMISSILES) ? MISSILES : 0)
+			| (up(VarbitID.PRAYER_PROTECTFROMMAGIC) ? MAGIC : 0);
 	}
 
 	private boolean up(int varbit)
