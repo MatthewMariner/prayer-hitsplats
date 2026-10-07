@@ -170,12 +170,13 @@ New high-end PvM boss plugins are not accepted as a blanket policy.
 
 ## Where this plugin sits against the combat rules
 
-It recolours a hitsplat that has already landed, from the player's own prayer varbits. To stay
-clear of "prayer switching indicators" and "combat prayer recommendations", these hold for every
-change:
+It recolours a hitsplat that has already landed, from the player's own prayer varbits, the
+projectiles that landed on them and whether their attacker stands in melee reach. To stay clear of
+"prayer switching indicators" and "combat prayer recommendations", these hold for every change:
 
 - Local player only — never another player's prayers or hitsplats.
-- No NPC data: no attack-style tables, no per-boss logic.
+- No per-monster knowledge: no attack-style tables, no projectile or animation id lists, no
+  per-boss logic.
 - Nothing is shown before a hit lands, and nothing suggests which prayer to use.
 
 A feature that needs any of those is a different plugin; stop and ask before writing it.
