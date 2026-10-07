@@ -1,7 +1,8 @@
 package com.matthewmariner.prayerhitsplats;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MAGIC;
+import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MISSILES;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 public class LandingsTest
@@ -11,37 +12,38 @@ public class LandingsTest
 	@Test
 	public void aProjectileLandingWithTheHitIsTakenOnce()
 	{
-		landings.aimed("arrow", 130);
+		landings.aimed("arrow", 130, MISSILES);
 
-		assertTrue(landings.take(120));
-		assertFalse(landings.take(120));
+		assertEquals(MISSILES, landings.take(120));
+		assertEquals(Landings.NONE, landings.take(120));
 	}
 
 	@Test
 	public void aProjectileStillInFlightIsNotTaken()
 	{
-		landings.aimed("bolt", 200);
+		landings.aimed("bolt", 200, MISSILES);
 
-		assertFalse(landings.take(200 - Landings.TOLERANCE - 1));
-		assertTrue(landings.take(200));
+		assertEquals(Landings.NONE, landings.take(200 - Landings.TOLERANCE - 1));
+		assertEquals(MISSILES, landings.take(200));
 	}
 
 	@Test
 	public void aProjectileThatLandedTicksAgoIsForgotten()
 	{
-		landings.aimed("spell", 100);
+		landings.aimed("spell", 100, MAGIC);
 
-		assertFalse(landings.take(100 + Landings.TOLERANCE + 1));
+		assertEquals(Landings.NONE, landings.take(100 + Landings.TOLERANCE + 1));
 	}
 
 	@Test
-	public void aProjectileReportedAgainAsYouMoveCountsOnce()
+	public void aProjectileKeepsThePrayersFromWhenItWasFired()
 	{
 		Object spell = new Object();
-		landings.aimed(spell, 140);
-		landings.aimed(spell, 150);
+		landings.aimed(spell, 140, MAGIC);
+		// Reported again as you move, after the prayer was flicked off.
+		landings.aimed(spell, 150, 0);
 
-		assertTrue(landings.take(150));
-		assertFalse(landings.take(150));
+		assertEquals(MAGIC, landings.take(150));
+		assertEquals(Landings.NONE, landings.take(150));
 	}
 }

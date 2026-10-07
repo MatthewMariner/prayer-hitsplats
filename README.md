@@ -6,15 +6,19 @@ blue 0 on you means a real miss.
 
 ## How it tells the attack
 
-- A projectile that lands on you with the hit means ranged or magic. Either of those prayers
-  counts, because the client cannot tell the two apart.
-- No projectile, with your attacker standing in melee reach, means melee: only Protect from Melee
+- A projectile that lands on you with the hit means ranged or magic, and either of those prayers
+  counts. No projectile, with your attacker in melee reach, means melee: only Protect from Melee
   counts.
+- The prayer is read as the server had it when the attack began (when a projectile was fired, or
+  the hit's own tick for melee), not when the 0 appears. A flick that was up for the attack tints.
 
 ## Limits
 
-- A tinted 0 means you were praying against the attack, not that the prayer saved you. The game
-  shows 0 either way, so a hit that would have missed anyway looks the same.
+- Ranged and magic look alike to the client, so the wrong one of those two prayers still tints.
+- A tinted 0 means the matching prayer was up, not that it made the 0: a hit that would have
+  missed anyway looks the same.
+- The few bosses that check prayer when the hit lands, rather than when the attack begins, are
+  judged at the attack.
 - A magic attack with no projectile, from an attacker next to you, reads as melee.
 - Only your own hitsplats. It uses no per-monster data and shows nothing before a hit lands.
 

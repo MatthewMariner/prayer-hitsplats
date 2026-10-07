@@ -178,5 +178,9 @@ projectiles that landed on them and whether their attacker stands in melee reach
 - No per-monster knowledge: no attack-style tables, no projectile or animation id lists, no
   per-boss logic.
 - Nothing is shown before a hit lands, and nothing suggests which prayer to use.
+- Prayer state comes from the per-tick snapshot of `getServerVarbitValue` taken at `GameTick`, never
+  a live or client-predicted `getVarbitValue` read: the game judges the prayers up as the attack's
+  tick starts, and the client flips the varbit on click before the server agrees.
+- One tint colour only. Per-prayer colours are the "last prayer" class the hub disabled after merge.
 
 A feature that needs any of those is a different plugin; stop and ask before writing it.

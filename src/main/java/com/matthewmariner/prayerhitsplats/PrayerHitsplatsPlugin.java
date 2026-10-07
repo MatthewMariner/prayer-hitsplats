@@ -1,15 +1,18 @@
 package com.matthewmariner.prayerhitsplats;
 
 import com.google.inject.Provides;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.HitsplatID;
-import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Projectile;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldArea;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.ProjectileMoved;
 import net.runelite.api.gameval.VarbitID;
@@ -31,6 +34,9 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class PrayerHitsplatsPlugin extends Plugin
 {
+	/** Bits of a protection-prayer mask. */
+	static final int MELEE = 1, MISSILES = 2, MAGIC = 4;
+
 	@Inject
 	private Client client;
 
@@ -42,6 +48,13 @@ public class PrayerHitsplatsPlugin extends Plugin
 
 	private final SplatSlots slots = new SplatSlots();
 	private final Landings landings = new Landings();
+
+	/**
+	 * The protection prayers the server had up after each of the last two ticks. An attack is judged
+	 * by the prayers up as its tick starts, so while a tick's events run, {@code current} is that.
+	 */
+	private int previous, current;
+	private int ticks;
 
 	@Override
 	protected void startUp()
@@ -57,12 +70,26 @@ public class PrayerHitsplatsPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		ticks++;
+		previous = current;
+		// The server's values: the client flips a prayer's varbit on click, before the server agrees.
+		current = (up(VarbitID.PRAYER_PROTECTFROMMELEE) ? MELEE : 0)
+			| (up(VarbitID.PRAYER_PROTECTFROMMISSILES) ? MISSILES : 0)
+			| (up(VarbitID.PRAYER_PROTECTFROMMAGIC) ? MAGIC : 0);
+	}
+
+	@Subscribe
 	public void onProjectileMoved(ProjectileMoved event)
 	{
 		Projectile projectile = event.getProjectile();
 		if (projectile.getTargetActor() == client.getLocalPlayer())
 		{
-			landings.aimed(projectile, projectile.getEndCycle());
+			// Either tick, until a test shows whether a projectile is first seen before or after its tick ends.
+			landings.aimed(projectile, projectile.getEndCycle(), previous | current);
+			log.debug("projectile {} tick={} startsIn={}", System.identityHashCode(projectile), ticks,
+				projectile.getStartCycle() - client.getGameCycle());
 		}
 	}
 
@@ -81,42 +108,35 @@ public class PrayerHitsplatsPlugin extends Plugin
 		// Every hitsplat on you is placed, tinted or not, so the slots stay in step with the client's.
 		int slot = slots.place(now, end);
 		// isMine() is an attack's hit or block on you, never poison and the like, so only it takes a projectile.
-		boolean melee = hitsplat.isMine() && !landings.take(now) && attackerInMeleeReach(player);
-		boolean protectMelee = isOn(VarbitID.PRAYER_PROTECTFROMMELEE);
-		boolean protectMissiles = isOn(VarbitID.PRAYER_PROTECTFROMMISSILES);
-		boolean protectMagic = isOn(VarbitID.PRAYER_PROTECTFROMMAGIC);
-		boolean prayed = prayedAgainst(melee, protectMelee, protectMissiles, protectMagic);
-		overlay.tint(slot, hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayed ? end : 0);
-		log.debug("hitsplat type={} amount={} melee={} protect melee/missiles/magic={}/{}/{} slot={}",
-			hitsplat.getHitsplatType(), hitsplat.getAmount(), melee, protectMelee, protectMissiles, protectMagic, slot);
+		int fired = hitsplat.isMine() ? landings.take(now) : Landings.NONE;
+		boolean melee = fired == Landings.NONE && hitsplat.isMine() && attackerInMeleeReach(player);
+		int prayers = fired == Landings.NONE ? current : fired;
+		overlay.tint(slot, hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayedAgainst(melee, prayers) ? end : 0);
+		log.debug("hitsplat type={} amount={} tick={} projectile={} melee={} prayers={} slot={}",
+			hitsplat.getHitsplatType(), hitsplat.getAmount(), ticks, fired != Landings.NONE, melee, prayers, slot);
 	}
 
 	/**
 	 * Melee is told apart from ranged and magic, but ranged and magic are not told apart, so either
 	 * of their prayers counts against both.
 	 */
-	static boolean prayedAgainst(boolean melee, boolean protectMelee, boolean protectMissiles, boolean protectMagic)
+	static boolean prayedAgainst(boolean melee, int prayers)
 	{
-		return melee ? protectMelee : protectMissiles || protectMagic;
+		return (prayers & (melee ? MELEE : MISSILES | MAGIC)) != 0;
 	}
 
 	/** A hit with no projectile was melee only if something attacking you stands where melee reaches. */
 	private boolean attackerInMeleeReach(Player player)
 	{
 		WorldArea area = player.getWorldArea();
-		for (NPC npc : client.getTopLevelWorldView().npcs())
-		{
-			if (npc.getInteracting() == player && npc.getWorldArea().isInMeleeDistance(area))
-			{
-				return true;
-			}
-		}
-		return false;
+		WorldView view = client.getTopLevelWorldView();
+		return Stream.<Actor>concat(view.npcs().stream(), view.players().stream())
+			.anyMatch(actor -> actor.getInteracting() == player && actor.getWorldArea().isInMeleeDistance(area));
 	}
 
-	private boolean isOn(int varbit)
+	private boolean up(int varbit)
 	{
-		return client.getVarbitValue(varbit) == 1;
+		return client.getServerVarbitValue(varbit) == 1;
 	}
 
 	@Provides
