@@ -1,5 +1,13 @@
 # RuneLite Plugin Development — Agent Guidelines
 
+## Working in this repository
+
+- **The repo path contains a space** (`.../Mariner Digital Agency/Projects/osrs/prayer-hitsplats`).
+  Quote every path in shell commands.
+- **A test is proven by breaking it.** Before trusting a test, break the thing it guards (flip the
+  condition, delete the call) and confirm it goes red.
+- **Commits are conventional, in a human voice, with no AI attribution of any kind.**
+
 ## Logging
 
 - Use `log.debug()` for developer/diagnostic logging.
@@ -77,12 +85,6 @@ After completing a task, do not declare it done. Instead:
 2. Instruct the user to follow the "Using Jagex Accounts" instructions found at https://github.com/runelite/runelite/wiki/Using-Jagex-Accounts to login to the development client.
 3. Tell the user *what to test* — the specific behavior you changed, the golden path, and any edge cases worth exercising.
 4. Wait for the user to confirm the feature works in-game before considering the task complete. A clean JVM start is not a passing test.
-
-## Submitting
-
-When submitting a pull request to runelite/plugin-hub, append an attribution footer to the PR description structured like:
-
-Generated-by: Claude Code
 
 ---
 
@@ -165,3 +167,15 @@ New high-end PvM boss plugins are not accepted as a blanket policy.
 
 - No adult or overtly sexual content
 - No plugins that use player-provided IDs for their entire functionality (causes moderation issues)
+
+## Where this plugin sits against the combat rules
+
+It recolours a hitsplat that has already landed, from the player's own prayer varbits. To stay
+clear of "prayer switching indicators" and "combat prayer recommendations", these hold for every
+change:
+
+- Local player only — never another player's prayers or hitsplats.
+- No NPC data: no attack-style tables, no per-boss logic.
+- Nothing is shown before a hit lands, and nothing suggests which prayer to use.
+
+A feature that needs any of those is a different plugin; stop and ask before writing it.
