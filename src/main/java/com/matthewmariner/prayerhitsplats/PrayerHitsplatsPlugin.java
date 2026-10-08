@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
@@ -28,7 +27,6 @@ import net.runelite.client.ui.overlay.OverlayManager;
  * A 0 means the attack missed or a protection prayer stopped it, and the game draws both the same.
  * This recolours the second kind, so a blue 0 on you is a real miss.
  */
-@Slf4j
 @PluginDescriptor(
 	name = "Prayer Hitsplats",
 	description = "Recolours the 0 you take while praying against the attack, so it no longer looks like a plain miss",
@@ -56,7 +54,6 @@ public class PrayerHitsplatsPlugin extends Plugin
 	 * judged by what was up when it was fired, not when it lands.
 	 */
 	private int previous, current;
-	private int ticks;
 
 	/**
 	 * This tick's hitsplats on you, judged once the tick ends: your own hitsplats arrive before the
@@ -101,7 +98,6 @@ public class PrayerHitsplatsPlugin extends Plugin
 		}
 		hits.clear();
 
-		ticks++;
 		previous = current;
 		current = protection();
 	}
@@ -112,10 +108,8 @@ public class PrayerHitsplatsPlugin extends Plugin
 		Projectile projectile = event.getProjectile();
 		if (projectile.getTargetActor() == client.getLocalPlayer())
 		{
-			// Either tick, until a test shows whether a projectile is first seen before or after its tick ends.
+			// Whether a projectile is first seen before or after its tick ends is not documented, so either counts.
 			landings.aimed(projectile, projectile.getEndCycle(), previous | current);
-			log.debug("projectile {} tick={} startsIn={}", System.identityHashCode(projectile), ticks,
-				projectile.getStartCycle() - client.getGameCycle());
 		}
 	}
 
@@ -143,9 +137,6 @@ public class PrayerHitsplatsPlugin extends Plugin
 		int prayers = fired == Landings.NONE ? protection() : fired;
 		boolean prayed = hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayedAgainst(melee, prayers);
 		overlay.tint(hit.slot, prayed ? hitsplat.getDisappearsOnGameCycle() : 0);
-		log.debug("hitsplat type={} amount={} tick={} projectile={} melee={} judged={} previous={} current={} live={} slot={}",
-			hitsplat.getHitsplatType(), hitsplat.getAmount(), ticks, fired != Landings.NONE, melee, prayers,
-			previous, current, protection(), hit.slot);
 	}
 
 	/**
