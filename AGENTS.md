@@ -2,8 +2,7 @@
 
 ## Working in this repository
 
-- **The repo path contains a space** (`.../Mariner Digital Agency/Projects/osrs/prayer-hitsplats`).
-  Quote every path in shell commands.
+- **Quote every path in shell commands**; checkouts can live under directories with spaces.
 - **A test is proven by breaking it.** Before trusting a test, break the thing it guards (flip the
   condition, delete the call) and confirm it goes red.
 - **Commits are conventional, in a human voice, with no AI attribution of any kind.**
