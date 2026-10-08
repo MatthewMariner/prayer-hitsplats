@@ -12,7 +12,8 @@ public class LandingsTest
 	@Test
 	public void aProjectileLandingWithTheHitIsTakenOnce()
 	{
-		landings.aimed("arrow", 130, MISSILES);
+		landings.aimed("arrow", 130);
+		landings.settle(MISSILES);
 
 		assertEquals(MISSILES, landings.take(120));
 		assertEquals(Landings.NONE, landings.take(120));
@@ -21,7 +22,8 @@ public class LandingsTest
 	@Test
 	public void aProjectileStillInFlightIsNotTaken()
 	{
-		landings.aimed("bolt", 200, MISSILES);
+		landings.aimed("bolt", 200);
+		landings.settle(MISSILES);
 
 		assertEquals(Landings.NONE, landings.take(200 - Landings.TOLERANCE - 1));
 		assertEquals(MISSILES, landings.take(200));
@@ -30,20 +32,35 @@ public class LandingsTest
 	@Test
 	public void aProjectileThatLandedTicksAgoIsForgotten()
 	{
-		landings.aimed("spell", 100, MAGIC);
+		landings.aimed("spell", 100);
+		landings.settle(MAGIC);
 
 		assertEquals(Landings.NONE, landings.take(100 + Landings.TOLERANCE + 1));
 	}
 
 	@Test
-	public void aProjectileKeepsThePrayersFromWhenItWasFired()
+	public void aProjectileKeepsThePrayersFromTheTickItWasFired()
 	{
 		Object spell = new Object();
-		landings.aimed(spell, 140, MAGIC);
-		// Reported again as you move, after the prayer was flicked off.
-		landings.aimed(spell, 150, 0);
+		landings.aimed(spell, 140);
+		landings.settle(MAGIC);
+		// Reported again a tick later, after the prayer was flicked off.
+		landings.aimed(spell, 150);
+		landings.settle(0);
 
 		assertEquals(MAGIC, landings.take(150));
 		assertEquals(Landings.NONE, landings.take(150));
+	}
+
+	@Test
+	public void twoProjectilesLandingTogetherAreTakenOneHitEach()
+	{
+		landings.aimed("first arrow", 130);
+		landings.aimed("second arrow", 131);
+		landings.settle(MISSILES);
+
+		assertEquals(MISSILES, landings.take(130));
+		assertEquals(MISSILES, landings.take(130));
+		assertEquals(Landings.NONE, landings.take(130));
 	}
 }

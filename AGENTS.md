@@ -179,10 +179,12 @@ projectiles that landed on them and whether their attacker stands in melee reach
   per-boss logic.
 - Nothing is shown before a hit lands, and nothing suggests which prayer to use.
 - Prayer state is always the server's (`getServerVarbitValue`), never the client-predicted
-  `getVarbitValue`: the client flips the varbit on click before the server agrees. Melee is judged
-  at the hit, which counts a click the server took on that same tick (in-game data, 2026-10-08:
-  5 of 5 such flicks took no damage against a monster that hit 3 of 8 unprotected attacks). A
-  projectile is judged by the per-`GameTick` snapshot from when it was fired.
+  `getVarbitValue`: the client flips the varbit on click before the server agrees. An attack is
+  judged by the prayers up at the `GameTick` ending the tick it was made, which counts a click the
+  server took on that same tick (in-game data, 2026-10-08: 10 of 10 such melee flicks took no
+  damage against a monster that hit 3 of 9 unprotected attacks): the hit's own tick for melee, the
+  tick a projectile was first seen for ranged and magic. `GameTick` is posted at the start of the
+  client cycle after a tick's packets (`Hooks.serverTick`/`tick`), so a read before it is a tick old.
 - One tint colour only. Per-prayer colours are the "last prayer" class the hub disabled after merge.
 
 A feature that needs any of those is a different plugin; stop and ask before writing it.

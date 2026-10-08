@@ -11,7 +11,7 @@ public interface PrayerHitsplatsConfig extends Config
 	@ConfigItem(
 		keyName = "colour",
 		name = "Colour",
-		description = "Colour of a 0 taken while a protection prayer is up"
+		description = "Colour of a 0 taken while praying against the attack"
 	)
 	default Color colour()
 	{

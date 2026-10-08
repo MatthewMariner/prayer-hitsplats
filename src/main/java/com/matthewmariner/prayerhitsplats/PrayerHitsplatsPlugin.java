@@ -50,14 +50,9 @@ public class PrayerHitsplatsPlugin extends Plugin
 	private final Landings landings = new Landings();
 
 	/**
-	 * The protection prayers the server had up after each of the last two ticks, so a projectile is
-	 * judged by what was up when it was fired, not when it lands.
-	 */
-	private int previous, current;
-
-	/**
 	 * This tick's hitsplats on you, judged once the tick ends: your own hitsplats arrive before the
 	 * tick's attacker positions and targets, so an attacker's first swing is not visible at the hit.
+	 * The prayers are read then too, which counts a click the server took on that same tick.
 	 */
 	private final List<Hit> hits = new ArrayList<>();
 
@@ -91,15 +86,15 @@ public class PrayerHitsplatsPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		// GameTick follows all of a tick's packets, so a projectile first seen since the last one was fired on this tick.
+		landings.settle(protection());
+
 		Player player = client.getLocalPlayer();
 		if (player != null)
 		{
 			hits.forEach(hit -> judge(hit, player));
 		}
 		hits.clear();
-
-		previous = current;
-		current = protection();
 	}
 
 	@Subscribe
@@ -108,8 +103,7 @@ public class PrayerHitsplatsPlugin extends Plugin
 		Projectile projectile = event.getProjectile();
 		if (projectile.getTargetActor() == client.getLocalPlayer())
 		{
-			// Whether a projectile is first seen before or after its tick ends is not documented, so either counts.
-			landings.aimed(projectile, projectile.getEndCycle(), previous | current);
+			landings.aimed(projectile, projectile.getEndCycle());
 		}
 	}
 
@@ -130,13 +124,23 @@ public class PrayerHitsplatsPlugin extends Plugin
 	private void judge(Hit hit, Player player)
 	{
 		Hitsplat hitsplat = hit.hitsplat;
-		// isMine() is an attack's hit or block on you, never poison and the like, so only it takes a projectile.
-		int fired = hitsplat.isMine() ? landings.take(hit.cycle) : Landings.NONE;
-		boolean melee = fired == Landings.NONE && hitsplat.isMine() && attackerInMeleeReach(player);
-		// Melee is judged by the prayers up at the hit, a click on that same tick included.
-		int prayers = fired == Landings.NONE ? protection() : fired;
-		boolean prayed = hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayedAgainst(melee, prayers);
-		overlay.tint(hit.slot, prayed ? hitsplat.getDisappearsOnGameCycle() : 0);
+		// isMine() is an attack's hit or block on you, never poison and the like: only it can take a projectile.
+		if (!hitsplat.isMine())
+		{
+			return;
+		}
+
+		int fired = landings.take(hit.cycle);
+		if (hit.slot == SplatSlots.UNKNOWN || hitsplat.getHitsplatType() != HitsplatID.BLOCK_ME)
+		{
+			return;
+		}
+
+		boolean melee = fired == Landings.NONE && attackerInMeleeReach(player);
+		if (prayedAgainst(melee, fired == Landings.NONE ? protection() : fired))
+		{
+			overlay.tint(hit.slot, hitsplat.getDisappearsOnGameCycle());
+		}
 	}
 
 	/**

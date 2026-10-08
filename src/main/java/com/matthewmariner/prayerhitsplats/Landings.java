@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * Projectiles aimed at you, kept until one lands with a hitsplat, together with the protection
- * prayers that were up when each was fired: those are the ones the game judges the hit by.
+ * prayers up on the tick each was fired: those are the ones the game judges the hit by.
  */
 final class Landings
 {
@@ -18,30 +18,34 @@ final class Landings
 
 	private static final class Landing
 	{
-		private final int prayers;
+		private int prayers = NONE;
 		private int end;
-
-		private Landing(int prayers)
-		{
-			this.prayers = prayers;
-		}
 	}
 
-	/**
-	 * Keyed by the projectile because the client reports one aimed at an actor again each time that
-	 * actor moves. The landing cycle follows each report; the prayers stay as first seen.
-	 */
+	/** Keyed by the projectile because the client reports one more than once; its landing cycle follows each report. */
 	private final Map<Object, Landing> landings = new HashMap<>();
 
-	void aimed(Object projectile, int endCycle, int prayers)
+	void aimed(Object projectile, int endCycle)
 	{
-		landings.computeIfAbsent(projectile, p -> new Landing(prayers)).end = endCycle;
+		landings.computeIfAbsent(projectile, p -> new Landing()).end = endCycle;
+	}
+
+	/** Gives every projectile first seen this tick the prayers the server had up by its end. */
+	void settle(int prayers)
+	{
+		for (Landing landing : landings.values())
+		{
+			if (landing.prayers == NONE)
+			{
+				landing.prayers = prayers;
+			}
+		}
 	}
 
 	/**
 	 * Takes the projectile landing within a tick of {@code now}.
 	 *
-	 * @return the prayers that were up when it was fired, or {@link #NONE}
+	 * @return the prayers up on the tick it was fired, or {@link #NONE}
 	 */
 	int take(int now)
 	{

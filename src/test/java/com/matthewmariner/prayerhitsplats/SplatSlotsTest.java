@@ -51,13 +51,26 @@ public class SplatSlotsTest
 	}
 
 	@Test
-	public void whenAllFourShowTheOneClosestToDisappearingIsReplaced()
+	public void aFreedSlotIsFoundByWrappingRoundToIt()
+	{
+		slots.place(100, 200);
+		slots.place(101, 150);
+		slots.place(102, 200);
+		slots.place(103, 200);
+
+		assertEquals(1, slots.place(160, 230));
+	}
+
+	@Test
+	public void aFifthHitsplatLeavesTheSlotsUnknownUntilAllHaveCleared()
 	{
 		slots.place(100, 190);
 		slots.place(101, 160);
 		slots.place(102, 180);
 		slots.place(103, 170);
 
-		assertEquals(1, slots.place(104, 174));
+		assertEquals(SplatSlots.UNKNOWN, slots.place(104, 174));
+		assertEquals(SplatSlots.UNKNOWN, slots.place(175, 245));
+		assertEquals(0, slots.place(245, 300));
 	}
 }

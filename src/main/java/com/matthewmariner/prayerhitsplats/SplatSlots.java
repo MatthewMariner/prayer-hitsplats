@@ -1,5 +1,7 @@
 package com.matthewmariner.prayerhitsplats;
 
+import java.util.Arrays;
+
 /**
  * Which of an actor's four hitsplat slots the client draws each new hitsplat in. The API says when
  * a hitsplat disappears but not where it is drawn, so the slot is replayed from every hitsplat the
@@ -9,13 +11,16 @@ final class SplatSlots
 {
 	static final int COUNT = 4;
 
+	/** What {@link #place} returns when the slot cannot be known. */
+	static final int UNKNOWN = -1;
+
 	private final int[] ends = new int[COUNT];
 	private int next;
 
 	/**
 	 * @param now game cycle the hitsplat was applied on
 	 * @param end game cycle it disappears on
-	 * @return the slot it is drawn in
+	 * @return the slot it is drawn in, or {@link #UNKNOWN}
 	 */
 	int place(int now, int end)
 	{
@@ -24,31 +29,21 @@ final class SplatSlots
 			next = 0;
 		}
 
-		int slot = -1;
-		for (int i = 0; i < COUNT && slot < 0; i++)
+		for (int i = 0; i < COUNT; i++)
 		{
-			if (ends[next] <= now)
-			{
-				slot = next;
-			}
+			int slot = next;
 			next = (next + 1) % COUNT;
-		}
-
-		if (slot < 0)
-		{
-			// All four are showing: the one closest to disappearing makes way.
-			slot = 0;
-			for (int i = 1; i < COUNT; i++)
+			if (ends[slot] <= now)
 			{
-				if (ends[i] < ends[slot])
-				{
-					slot = i;
-				}
+				ends[slot] = end;
+				return slot;
 			}
 		}
 
-		ends[slot] = end;
-		return slot;
+		// All four show, and whether the client drops this one or replaces another is not in the
+		// API, so every slot counts as unknown until all of them have cleared.
+		Arrays.fill(ends, Math.max(end, Arrays.stream(ends).max().getAsInt()));
+		return UNKNOWN;
 	}
 
 	private boolean allFree(int now)

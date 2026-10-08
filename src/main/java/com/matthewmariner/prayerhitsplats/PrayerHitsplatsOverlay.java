@@ -60,7 +60,7 @@ class PrayerHitsplatsOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		int now = client.getGameCycle();
-		if (Arrays.stream(tintedUntil).noneMatch(until -> until > now))
+		if (!tinting(now))
 		{
 			return null;
 		}
@@ -86,6 +86,18 @@ class PrayerHitsplatsOverlay extends Overlay
 			}
 		}
 		return null;
+	}
+
+	private boolean tinting(int now)
+	{
+		for (int until : tintedUntil)
+		{
+			if (until > now)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private BufferedImage cover()

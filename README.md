@@ -1,27 +1,26 @@
 # Prayer Hitsplats
 
-A blue 0 on you means the attack missed, or a protection prayer stopped it. The game draws both
+A blue 0 on you means the attack missed, or a protection prayer stopped it; the game draws both
 the same. This plugin recolours the 0s that land while you are praying against the attack, so a
 blue 0 on you means a real miss.
 
-## How it tells the attack
+## How a 0 is judged
 
 - A projectile that lands on you with the hit means ranged or magic, and either of those prayers
-  counts. No projectile, with your attacker in melee reach, means melee: only Protect from Melee
-  counts.
-- The prayer is read as the server had it when the attack was made: for melee, on the hit's own
-  tick, a click on that tick included; for a projectile, when it was fired, not when it lands. A
-  flick that was up for the attack tints.
+  counts. No projectile, with something attacking you in melee reach, means melee, and only
+  Protect from Melee counts. Anything else is taken as ranged or magic.
+- Prayers are read as the server had them on the tick the attack was made, a click on that tick
+  included: the hit's own tick for melee, the tick it was fired for a projectile.
 
 ## Limits
 
 - Ranged and magic look alike to the client, so the wrong one of those two prayers still tints.
 - A tinted 0 means the matching prayer was up, not that it made the 0: a hit that would have
   missed anyway looks the same.
-- The few bosses that check prayer when the hit lands, rather than when the attack begins, are
-  judged at the attack.
-- A magic attack with no projectile, from an attacker next to you, reads as melee.
-- Only your own hitsplats. It uses no per-monster data and shows nothing before a hit lands.
+- An attack the game judges when it lands, rather than when it is made, is still judged here at
+  the start. A magic attack with no projectile, from something next to you, reads as melee.
+- A 0 that arrives while four hitsplats already show on you is not tinted.
+- Only your own hitsplats, after they land. No per-monster data.
 
 ## Settings
 
