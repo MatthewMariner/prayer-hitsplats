@@ -30,9 +30,13 @@ final class Landings
 		landings.computeIfAbsent(projectile, p -> new Landing()).end = endCycle;
 	}
 
-	/** Gives every projectile first seen this tick the prayers the server had up by its end. */
-	void settle(int prayers)
+	/**
+	 * Gives every projectile first seen this tick the prayers the server had up by its end, and
+	 * forgets any that landed without a hit, so a projectile that never brings one is not kept.
+	 */
+	void settle(int prayers, int now)
 	{
+		forget(now);
 		for (Landing landing : landings.values())
 		{
 			if (landing.prayers == NONE)
@@ -49,7 +53,7 @@ final class Landings
 	 */
 	int take(int now)
 	{
-		landings.values().removeIf(landing -> landing.end < now - TOLERANCE);
+		forget(now);
 		for (Iterator<Landing> it = landings.values().iterator(); it.hasNext(); )
 		{
 			Landing landing = it.next();
@@ -60,5 +64,10 @@ final class Landings
 			}
 		}
 		return NONE;
+	}
+
+	private void forget(int now)
+	{
+		landings.values().removeIf(landing -> landing.end < now - TOLERANCE);
 	}
 }

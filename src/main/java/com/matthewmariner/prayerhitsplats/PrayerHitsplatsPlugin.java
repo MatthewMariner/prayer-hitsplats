@@ -87,7 +87,7 @@ public class PrayerHitsplatsPlugin extends Plugin
 	public void onGameTick(GameTick event)
 	{
 		// GameTick follows all of a tick's packets, so a projectile first seen since the last one was fired on this tick.
-		landings.settle(protection());
+		landings.settle(protection(), client.getGameCycle());
 
 		Player player = client.getLocalPlayer();
 		if (player != null)
