@@ -1,6 +1,8 @@
 package com.matthewmariner.prayerhitsplats;
 
 import com.google.inject.Provides;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +58,25 @@ public class PrayerHitsplatsPlugin extends Plugin
 	private int previous, current;
 	private int ticks;
 
+	/**
+	 * This tick's hitsplats on you, judged once the tick ends: your own hitsplats arrive before the
+	 * tick's attacker positions and targets, so an attacker's first swing is not visible at the hit.
+	 */
+	private final List<Hit> hits = new ArrayList<>();
+
+	private static final class Hit
+	{
+		private final Hitsplat hitsplat;
+		private final int slot, cycle;
+
+		private Hit(Hitsplat hitsplat, int slot, int cycle)
+		{
+			this.hitsplat = hitsplat;
+			this.slot = slot;
+			this.cycle = cycle;
+		}
+	}
+
 	@Override
 	protected void startUp()
 	{
@@ -67,11 +88,19 @@ public class PrayerHitsplatsPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		overlay.clear();
+		hits.clear();
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		Player player = client.getLocalPlayer();
+		if (player != null)
+		{
+			hits.forEach(hit -> judge(hit, player));
+		}
+		hits.clear();
+
 		ticks++;
 		previous = current;
 		current = protection();
@@ -93,26 +122,30 @@ public class PrayerHitsplatsPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		Player player = client.getLocalPlayer();
-		if (event.getActor() != player)
+		if (event.getActor() != client.getLocalPlayer())
 		{
 			return;
 		}
 
 		Hitsplat hitsplat = event.getHitsplat();
 		int now = client.getGameCycle();
-		int end = hitsplat.getDisappearsOnGameCycle();
 		// Every hitsplat on you is placed, tinted or not, so the slots stay in step with the client's.
-		int slot = slots.place(now, end);
+		hits.add(new Hit(hitsplat, slots.place(now, hitsplat.getDisappearsOnGameCycle()), now));
+	}
+
+	private void judge(Hit hit, Player player)
+	{
+		Hitsplat hitsplat = hit.hitsplat;
 		// isMine() is an attack's hit or block on you, never poison and the like, so only it takes a projectile.
-		int fired = hitsplat.isMine() ? landings.take(now) : Landings.NONE;
+		int fired = hitsplat.isMine() ? landings.take(hit.cycle) : Landings.NONE;
 		boolean melee = fired == Landings.NONE && hitsplat.isMine() && attackerInMeleeReach(player);
 		// Melee is judged by the prayers up at the hit, a click on that same tick included.
 		int prayers = fired == Landings.NONE ? protection() : fired;
-		overlay.tint(slot, hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayedAgainst(melee, prayers) ? end : 0);
+		boolean prayed = hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayedAgainst(melee, prayers);
+		overlay.tint(hit.slot, prayed ? hitsplat.getDisappearsOnGameCycle() : 0);
 		log.debug("hitsplat type={} amount={} tick={} projectile={} melee={} judged={} previous={} current={} live={} slot={}",
 			hitsplat.getHitsplatType(), hitsplat.getAmount(), ticks, fired != Landings.NONE, melee, prayers,
-			previous, current, protection(), slot);
+			previous, current, protection(), hit.slot);
 	}
 
 	/**
