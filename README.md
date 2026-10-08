@@ -9,8 +9,9 @@ blue 0 on you means a real miss.
 - A projectile that lands on you with the hit means ranged or magic, and either of those prayers
   counts. No projectile, with your attacker in melee reach, means melee: only Protect from Melee
   counts.
-- The prayer is read as the server had it when the attack began (when a projectile was fired, or
-  the hit's own tick for melee), not when the 0 appears. A flick that was up for the attack tints.
+- The prayer is read as the server had it when the attack was made: for melee, on the hit's own
+  tick, a click on that tick included; for a projectile, when it was fired, not when it lands. A
+  flick that was up for the attack tints.
 
 ## Limits
 

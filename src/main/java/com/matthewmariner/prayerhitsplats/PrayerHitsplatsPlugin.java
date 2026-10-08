@@ -50,8 +50,8 @@ public class PrayerHitsplatsPlugin extends Plugin
 	private final Landings landings = new Landings();
 
 	/**
-	 * The protection prayers the server had up after each of the last two ticks. An attack is judged
-	 * by the prayers up as its tick starts, so while a tick's events run, {@code current} is that.
+	 * The protection prayers the server had up after each of the last two ticks, so a projectile is
+	 * judged by what was up when it was fired, not when it lands.
 	 */
 	private int previous, current;
 	private int ticks;
@@ -107,7 +107,8 @@ public class PrayerHitsplatsPlugin extends Plugin
 		// isMine() is an attack's hit or block on you, never poison and the like, so only it takes a projectile.
 		int fired = hitsplat.isMine() ? landings.take(now) : Landings.NONE;
 		boolean melee = fired == Landings.NONE && hitsplat.isMine() && attackerInMeleeReach(player);
-		int prayers = fired == Landings.NONE ? current : fired;
+		// Melee is judged by the prayers up at the hit, a click on that same tick included.
+		int prayers = fired == Landings.NONE ? protection() : fired;
 		overlay.tint(slot, hitsplat.getHitsplatType() == HitsplatID.BLOCK_ME && prayedAgainst(melee, prayers) ? end : 0);
 		log.debug("hitsplat type={} amount={} tick={} projectile={} melee={} judged={} previous={} current={} live={} slot={}",
 			hitsplat.getHitsplatType(), hitsplat.getAmount(), ticks, fired != Landings.NONE, melee, prayers,
