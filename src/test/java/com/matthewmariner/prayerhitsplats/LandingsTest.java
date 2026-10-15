@@ -1,6 +1,7 @@
 package com.matthewmariner.prayerhitsplats;
 
 import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MAGIC;
+import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MELEE;
 import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MISSILES;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -30,12 +31,30 @@ public class LandingsTest
 	}
 
 	@Test
+	public void aProjectileLandingAFullToleranceAfterTheHitIsTaken()
+	{
+		landings.aimed("a", 100 + Landings.TOLERANCE);
+		landings.settle(MELEE, 100);
+
+		assertEquals(MELEE, landings.take(100));
+	}
+
+	@Test
 	public void aProjectileThatLandedTicksAgoIsForgotten()
 	{
 		landings.aimed("spell", 100);
 		landings.settle(MAGIC, 100);
 
 		assertEquals(Landings.NONE, landings.take(100 + Landings.TOLERANCE + 1));
+	}
+
+	@Test
+	public void aProjectileThatLandedAFullToleranceBeforeTheHitIsStillTaken()
+	{
+		landings.aimed("a", 100);
+		landings.settle(MELEE, 90);
+
+		assertEquals(MELEE, landings.take(100 + Landings.TOLERANCE));
 	}
 
 	@Test
@@ -53,7 +72,7 @@ public class LandingsTest
 	}
 
 	@Test
-	public void aProjectileThatNeverBringsAHitIsForgottenAtTheNextTick()
+	public void aProjectileThatNeverBringsAHitIsForgottenATickAfterItLands()
 	{
 		landings.aimed("cosmetic", 100);
 		landings.settle(MAGIC, 100 + Landings.TOLERANCE + 1);
@@ -103,12 +122,39 @@ public class LandingsTest
 	}
 
 	@Test
+	public void theNearerLandingWinsEvenWhenTheFartherOneLandedFirst()
+	{
+		// The far one landed before the hit and the near one lands after it, so only the distance
+		// picks, not which side of the hit it is on.
+		landings.aimed("a", 120);
+		landings.settle(MAGIC, 100);
+		landings.aimed("b", 135);
+		landings.settle(MISSILES, 101);
+
+		assertEquals(MISSILES, landings.take(130));
+		assertEquals(MAGIC, landings.take(130));
+	}
+
+	@Test
 	public void aTieGoesToTheEarlierLanding()
 	{
 		landings.aimed("a", 140);
 		landings.settle(MAGIC, 100);
 		landings.aimed("b", 120);
 		landings.settle(MISSILES, 101);
+
+		assertEquals(MISSILES, landings.take(130));
+		assertEquals(MAGIC, landings.take(130));
+	}
+
+	@Test
+	public void aTieGoesToTheEarlierLandingEvenWhenItSortsFirst()
+	{
+		// The mirror of the tie above: here the earlier landing is the one the map reaches first.
+		landings.aimed("a", 120);
+		landings.settle(MISSILES, 100);
+		landings.aimed("b", 140);
+		landings.settle(MAGIC, 101);
 
 		assertEquals(MISSILES, landings.take(130));
 		assertEquals(MAGIC, landings.take(130));
