@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Projectiles aimed at you, kept until one lands with a hitsplat, together with the protection
+ * Projectiles aimed at you, kept until a tick after they land, together with the protection
  * prayers up on the tick each was fired: one of the two moments a hit is judged by, the other being
  * the tick it lands.
  */
@@ -36,7 +36,7 @@ final class Landings
 
 	/**
 	 * Gives every projectile first seen this tick the prayers the server had up by its end, and
-	 * forgets any that landed without a hit, so a projectile that never brings one is not kept.
+	 * forgets any that landed over a tick ago, so a projectile that never brings a hit is not kept.
 	 * A taken projectile keeps what it had.
 	 */
 	void settle(int prayers, int now)

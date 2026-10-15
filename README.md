@@ -16,10 +16,13 @@ blue 0 on you means a real miss.
 
 ## Limits
 
-- Ranged and magic look alike to the client, so the wrong one of those two prayers still tints.
-- A tinted 0 means the matching prayer was up, not that it made the 0: a hit that would have
+- For a hit with no projectile, ranged and magic look alike to the client, so the wrong one of
+  those two prayers still tints. For a projectile any protection prayer does, so one that misses
+  on its own while only the wrong prayer is up also tints.
+- A tinted 0 means a protection prayer was up, not that it made the 0: a hit that would have
   missed anyway looks the same.
-- A projectile that misses on its own while only the wrong protection prayer is up also tints.
+- A projectile's 0 tints if a prayer is up when it lands, even from a monster that judged the
+  attack when it was fired.
 - A magic attack with no projectile, from something next to you, reads as melee.
 - A 0 that arrives while four hitsplats already show on you is not tinted.
 - Only your own hitsplats, after they land. No per-monster data.
