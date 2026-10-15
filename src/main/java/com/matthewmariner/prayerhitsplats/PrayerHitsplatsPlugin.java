@@ -136,20 +136,31 @@ public class PrayerHitsplatsPlugin extends Plugin
 			return;
 		}
 
-		boolean melee = fired == Landings.NONE && attackerInMeleeReach(player);
-		if (prayedAgainst(melee, fired == Landings.NONE ? protection() : fired))
+		boolean stopped = fired == Landings.NONE
+			? prayedAgainst(attackerInMeleeReach(player), protection())
+			: prayedAgainstProjectile(fired, protection());
+		if (stopped)
 		{
 			overlay.tint(hit.slot, hitsplat.getDisappearsOnGameCycle());
 		}
 	}
 
 	/**
-	 * Melee is told apart from ranged and magic, but ranged and magic are not told apart, so either
-	 * of their prayers counts against both.
+	 * For a hit with no projectile. Melee is told apart from ranged and magic, but ranged and magic
+	 * are not told apart, so either of their prayers counts against both.
 	 */
 	static boolean prayedAgainst(boolean melee, int prayers)
 	{
 		return (prayers & (melee ? MELEE : MISSILES | MAGIC)) != 0;
+	}
+
+	/**
+	 * Any protection prayer up when the projectile was fired or when it landed. A monster judges at
+	 * one moment or the other and the plugin does not know which, nor the attack's style.
+	 */
+	static boolean prayedAgainstProjectile(int fired, int landed)
+	{
+		return (fired | landed) != 0;
 	}
 
 	/** A hit with no projectile was melee only if something attacking you stands where melee reaches. */

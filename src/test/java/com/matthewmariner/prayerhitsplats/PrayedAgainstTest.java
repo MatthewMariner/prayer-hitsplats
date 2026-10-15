@@ -4,6 +4,7 @@ import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MAGIC;
 import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MELEE;
 import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.MISSILES;
 import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.prayedAgainst;
+import static com.matthewmariner.prayerhitsplats.PrayerHitsplatsPlugin.prayedAgainstProjectile;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -19,11 +20,39 @@ public class PrayedAgainstTest
 	}
 
 	@Test
-	public void aProjectileIsStoppedByEitherRangedOrMagicPrayer()
+	public void aHitOutOfMeleeReachIsStoppedByEitherRangedOrMagicPrayer()
 	{
 		assertTrue(prayedAgainst(false, MISSILES));
 		assertTrue(prayedAgainst(false, MAGIC));
-		assertFalse("melee prayer against a projectile", prayedAgainst(false, MELEE));
+		assertFalse("melee prayer against a hit out of melee reach", prayedAgainst(false, MELEE));
 		assertFalse("no prayer", prayedAgainst(false, 0));
+	}
+
+	@Test
+	public void aProjectileHitIsStoppedByAPrayerUpWhenItWasFired()
+	{
+		assertTrue(prayedAgainstProjectile(MISSILES, 0));
+		assertTrue(prayedAgainstProjectile(MAGIC, 0));
+	}
+
+	@Test
+	public void aProjectileHitIsStoppedByAPrayerUpWhenItLanded()
+	{
+		assertTrue(prayedAgainstProjectile(0, MISSILES));
+		assertTrue(prayedAgainstProjectile(0, MAGIC));
+		assertTrue("wrong prayer at launch, right one at impact", prayedAgainstProjectile(MELEE, MAGIC));
+	}
+
+	@Test
+	public void aProjectileHitIsStoppedByProtectFromMelee()
+	{
+		assertTrue(prayedAgainstProjectile(MELEE, 0));
+		assertTrue(prayedAgainstProjectile(0, MELEE));
+	}
+
+	@Test
+	public void aProjectileHitWithNoPrayerUpAtEitherMomentIsNotStopped()
+	{
+		assertFalse(prayedAgainstProjectile(0, 0));
 	}
 }
